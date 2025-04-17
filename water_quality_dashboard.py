@@ -1,37 +1,54 @@
 import streamlit as st
-import joblib
+import pandas as pd
 import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report
 
-# Load model and scaler
-model = joblib.load('random_forest_model.pkl')
-scaler = joblib.load('scaler.pkl')
+# Load dataset
+@st.cache_data
+def load_data():
+    df = pd.read_csv("water_potability.csv")
+    df = df.fillna(df.median(numeric_only=True))
+    return df
 
-st.set_page_config(page_title="Water Quality Predictor", layout="centered")
+df = load_data()
 
+# Preprocessing
+X = df.drop("Potability", axis=1)
+y = df["Potability"]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+
+# Train model
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train_scaled, y_train)
+
+# App layout
 st.title("💧 Water Quality Prediction & Alert System")
-st.markdown("Enter water test values to check if it's safe to drink. We'll help you understand each parameter too!")
+st.markdown("Enter water test values to check if it's safe to drink.")
 
-# Inputs with explanation tooltips
-pH = st.number_input("pH Level", 5.0, 9.0, 7.0, help="Ideal pH for drinking water is between 6.5 and 8.5.")
-Hardness = st.number_input("Hardness (mg/L)", 100, 500, 200, help="Hardness is caused by calcium/magnesium. High values can affect taste.")
-Solids = st.number_input("Total Dissolved Solids (mg/L)", 500, 50000, 10000, help="High TDS may include harmful metals or salts.")
-Chloramines = st.number_input("Chloramines (mg/L)", 0.5, 10.0, 5.0, help="Used to disinfect water. Should be below 4 mg/L ideally.")
-Sulfate = st.number_input("Sulfate (mg/L)", 100, 500, 200, help="Sulfates above 250 mg/L may affect taste and cause issues.")
-Conductivity = st.number_input("Conductivity (µS/cm)", 100, 800, 400, help="High conductivity indicates high ion concentration.")
-Organic_carbon = st.number_input("Organic Carbon (mg/L)", 2, 30, 10, help="Measures organic contaminants. Higher values can reduce quality.")
-Trihalomethanes = st.number_input("Trihalomethanes (µg/L)", 10, 120, 60, help="By-products of disinfection. WHO limit: ~100 µg/L.")
-Turbidity = st.number_input("Turbidity (NTU)", 1, 7, 3, help="Clarity of water. WHO suggests <5 NTU.")
+# User inputs
+ph = st.number_input("pH Level", 0.0, 14.0, 7.0)
+hardness = st.number_input("Hardness (mg/L)", 50.0, 500.0, 200.0)
+solids = st.number_input("Total Dissolved Solids (mg/L)", 100.0, 50000.0, 10000.0)
+chloramines = st.number_input("Chloramines (mg/L)", 0.0, 10.0, 5.0)
+sulfate = st.number_input("Sulfate (mg/L)", 50.0, 500.0, 200.0)
+conductivity = st.number_input("Conductivity (µS/cm)", 100.0, 1000.0, 400.0)
+organic_carbon = st.number_input("Organic Carbon (mg/L)", 2.0, 30.0, 10.0)
+trihalomethanes = st.number_input("Trihalomethanes (µg/L)", 0.0, 120.0, 60.0)
+turbidity = st.number_input("Turbidity (NTU)", 1.0, 10.0, 3.0)
 
-# Button to predict
-if st.button("🔍 Predict Water Quality"):
-    input_data = [pH, Hardness, Solids, Chloramines, Sulfate,
-                  Conductivity, Organic_carbon, Trihalomethanes, Turbidity]
-    input_scaled = scaler.transform([input_data])
-    prediction = model.predict(input_scaled)[0]
+input_data = np.array([[ph, hardness, solids, chloramines, sulfate,
+                        conductivity, organic_carbon, trihalomethanes, turbidity]])
+input_data_scaled = scaler.transform(input_data)
 
+if st.button("🔍 Check Water Quality"):
+    prediction = model.predict(input_data_scaled)[0]
     if prediction == 1:
-        st.success("✅ Water is **safe** for consumption.")
-        st.markdown("**Great!** Your water meets the general quality standards.")
+        st.success("✅ Water is safe for consumption.")
     else:
-        st.error("🚨 ALERT: Water is **unsafe** for consumption!")
-        st.markdown("Please consider treating or testing the water further before use.")
+        st.error("🚨 ALERT: Water is unsafe! Immediate action needed.")

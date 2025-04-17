@@ -1,9 +1,0 @@
-import joblib
-from sklearn.preprocessing import StandardScaler
-
-# Example of how to create and fit a scaler
-scaler = StandardScaler()
-scaler.fit(X_train)
-
-# Save the scaler
-joblib.dump(scaler, 'scaler.pkl')

@@ -1,5 +1,6 @@
 import streamlit as st
 import numpy as np
+import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
@@ -29,12 +30,46 @@ turbidity = st.sidebar.slider("Turbidity (NTU)", 1.0, 10.0, 3.0)
 input_data = np.array([[ph, hardness, solids, chloramines, sulfate,
                         conductivity, organic_carbon, trihalomethanes, turbidity]])
 
-# Load and Train Model (Placeholder for actual model training code)
+# Sample Data to train the model (This will be replaced with actual data in your use case)
 @st.cache_data
 def load_data():
-    # Placeholder code: Replace with actual data loading and model training
-    df = pd.read_csv("water_potability.csv")
+    # Sample mock data for testing
+    data = {
+        'ph': [7.0, 6.5, 7.2, 8.0, 6.8],
+        'Hardness': [200, 180, 250, 190, 210],
+        'Solids': [10000, 20000, 15000, 12000, 13000],
+        'Chloramines': [5.0, 4.5, 5.5, 6.0, 4.8],
+        'Sulfate': [200, 180, 210, 190, 200],
+        'Conductivity': [400, 450, 500, 470, 480],
+        'Organic_carbon': [10, 12, 8, 9, 11],
+        'Trihalomethanes': [60, 50, 70, 65, 60],
+        'Turbidity': [3, 4, 2, 3, 3],
+        'Potability': [1, 0, 1, 0, 1]  # 1 = Safe, 0 = Unsafe
+    }
+    df = pd.DataFrame(data)
     df = df.fillna(df.median(numeric_only=True))  # Fill missing values with the median
     return df
 
-df = load_data_
+df = load_data()
+
+X = df.drop("Potability", axis=1)
+y = df["Potability"]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train_scaled, y_train)
+
+input_data_scaled = scaler.transform(input_data)
+
+# Prediction
+if st.button("🔍 Check Water Quality"):
+    prediction = model.predict(input_data_scaled)[0]
+    
+    # Show result (highlight message in green for safe and red for unsafe)
+    if prediction == 1:
+        st.success("✅ **Water is Safe for Consumption**")
+    else:
+        st.error("🚨 **Water is Unsafe! Immediate Action Needed**")

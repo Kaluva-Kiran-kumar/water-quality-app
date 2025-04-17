@@ -1,11 +1,1 @@
-import joblib
-from sklearn.ensemble import RandomForestClassifier
 
-# Example of how to train the model
-# Assume your model (rf_clf) is already trained with features and labels (X_train, y_train)
-
-rf_clf = RandomForestClassifier(n_estimators=100, random_state=42)
-rf_clf.fit(X_train, y_train)
-
-# Save the model
-joblib.dump(rf_clf, 'random_forest_model.pkl')
